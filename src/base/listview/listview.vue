@@ -97,6 +97,9 @@ export default {
       let anchorIndex = parseInt(this.touch.anchorIndex) + delta
       this._scrollTo(anchorIndex)
     },
+    refresh() {
+      this.$res.listview.refresh()
+    },
     scroll(pos) {
       this.scrollY = pos.y
     },
