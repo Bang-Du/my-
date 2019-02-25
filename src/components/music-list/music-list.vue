@@ -122,7 +122,7 @@ export default {
         list: this.songs
       })
     },
-    handlePlaylist(playlist) {
+    handlePlayList(playlist) {
       const bottom = playlist.length > 0 ? '60px' : ''
       this.$refs.list.$el.style.bottom = bottom
       this.$refs.list.refresh() 

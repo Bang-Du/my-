@@ -64,7 +64,7 @@
               <i class="icon-next" @click='next'></i>
             </div>
             <div class="icon i-right">
-              <i class="icon icon-not-favorite"></i>
+              <i class="icon" @click="toggleFavorite(currentSong)" :class="getFavoriteIcon(currentSong)"></i>
             </div>
           </div>
         </div>
@@ -84,30 +84,33 @@
             <i :class="playIconMini" class="icon-mini" @click.stop='togglePlaying'></i>
           </progress-circle>
         </div>
-        <div class="control">
+        <div class="control" @click.stop="showPlaylist">
           <i class="icon-playlist"></i>
         </div>
       </div>
     </transition>
+    <playlist ref="playlist"></playlist>
     <audio :src="currentSong.url" ref='audio' @canplay="ready" @error='error' @timeupdate="updateTime" @ended="end"></audio>
   </div>
 </template>
 
 <script>
-import {mapGetters, mapMutations} from 'vuex'
+import {mapGetters, mapMutations, mapActions} from 'vuex'
 import animations from 'create-keyframe-animation'
 import {prefixStyle} from 'common/js/dom'
 import ProgressBar from 'base/progress-bar/progress-bar'
 import ProgressCircle from 'base/progress-circle/progress-circle'
 import {playMode} from 'common/js/config'
-import {shuffle} from 'common/js/util'
 import lyricParser from 'lyric-parser'
 import Scroll from 'base/scroll/scroll'
+import Playlist from 'components/playlist/playlist'
+import {playerMixin} from 'common/js/mixin'
 
 const transform = prefixStyle('transform')
 const transitionDuration = prefixStyle('transitionDuration')
 
 export default {
+  mixins: [playerMixin],
   data() {
     return {
       songReady: false,
@@ -135,9 +138,6 @@ export default {
     precent() {
       // return 0.6
       return this.currentTime / this.currentSong.duration
-    },
-    iconMode() {
-      return this.mode === playMode.sequence ? 'icon-sequence' : this.mode === playMode.loop ? 'icon-loop' : 'icon-random'
     },
     ...mapGetters([
       'fullScreen',
@@ -242,6 +242,7 @@ export default {
         this.togglePlaying()
       }
       this.songReady = false
+      this.savePlayHistory(this.currentSong)
     },
     prev() { // 上一首
       if (!this.songReady) {
@@ -259,6 +260,7 @@ export default {
     },
     ready() { // 歌曲可播放的状态
       this.songReady = true
+      this.savePlayHistory(this.currentSong)
     },
     error() { // 歌曲错误时的状态
       this.songReady = true
@@ -281,24 +283,6 @@ export default {
       if (this.currentLyric) {
         this.currentLyric.seek(time * 1000)
       }
-    },
-    changeMode() { // 切换播放模式
-      const mode = (this.mode + 1) % 3
-      this.setPlayMode(mode)
-      let list = null
-      if (mode === playMode.random) {
-        list = shuffle(this.sequenceList)
-      } else {
-        list = this.sequenceList
-      }
-      this.resetCurrentIndex(list)
-      this.setPlayList(list)
-    },
-    resetCurrentIndex(list) { // 切换播放模式，不改变当前的播放歌曲，但要获取此歌曲在新的播放列表的index
-      let index = list.findIndex((item) => {
-        return item.id === this.currentSong.id
-      })
-      this.setCurrentIndex(index)
     },
     end() { // 在歌曲播放完时触发
       if (!this.mode === playMode.loop) {
@@ -388,6 +372,9 @@ export default {
       this.$refs.middleL.style.opacity = opacity
       this.$refs.middleL.style[transitionDuration] = '300ms'
     },
+    showPlaylist() { // 展示playlist
+      this.$refs.playlist.show()
+    },
     _getPosAndScale() { // 获取cd的变化状态
       const targetWidth = 40
       const paddingLeft = 40
@@ -405,12 +392,16 @@ export default {
       setCurrentIndex: 'SET_CURRENT_INDEX',
       setPlayMode: 'SET_PLAY_MODE',
       setPlayList: 'SET_PLAYLIST'
-    })
+    }),
+    ...mapActions([
+      'savePlayHistory'
+    ])
   },
   components: {
     ProgressBar,
     ProgressCircle,
-    Scroll
+    Scroll,
+    Playlist
   }
 }
 </script>

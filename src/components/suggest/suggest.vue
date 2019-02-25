@@ -68,7 +68,9 @@ export default {
       this.$refs.suggest.scrollTo(0, 0)
       search(this.query, this.page, this.showSinger).then(res => {
         let ret = res
-        ret = JSON.parse(res.slice(9, -1));
+        if (typeof res == 'string') {
+          ret = JSON.parse(res.slice(9, -1));
+        }
         if (ret.code === ERR_OK) {
           this.result = this._getResult(ret.data)
           this.checkMore(ret.data)
@@ -108,6 +110,10 @@ export default {
       } else {
         this.insertSong(item)
       }
+      this.$emit("select")
+    },
+    refresh() {
+      this.$refs.suggest.refresh()
     },
     beforeScroll() {
       this.$emit("listScroll")
